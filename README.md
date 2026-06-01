@@ -27,3 +27,31 @@
 ## Лицензия
 
 Учебный проект, не предназначен для коммерческого использования.
+
+## Запуск через Docker (рекомендованный способ)
+
+1. Убедитесь, что на машине установлены Docker и Docker Compose.
+2. Склонируйте репозиторий и перейдите в корневую папку проекта.
+3. Скопируйте `.env.example` в `.env`:
+   ```bash
+   cp .env.example .env
+   
+Заполните .env своими значениями (особенно SECRET_KEY и TELEGRAM_BOT_TOKEN).
+
+4. Запустите все сервисы:
+`docker-compose up -d`
+5. Примените миграции (автоматически выполняются при старте web‑сервиса, но можно и вручную):
+`docker-compose exec web python manage.py migrate`
+6. API станет доступно по адресу: http://localhost:8000
+
+   Документация Swagger: http://localhost:8000/api/swagger/
+
+### Остановка и удаление контейнеров
+`docker-compose down`
+
+Чтобы удалить также тома с данными БД и Redis: `docker-compose down -v`
+
+### Просмотр логов
+`docker-compose logs -f`         # все сервисы
+
+`docker-compose logs -f celery`   # только celery worker
