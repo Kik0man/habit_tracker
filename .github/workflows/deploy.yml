@@ -62,7 +62,7 @@ jobs:
 
   build-and-deploy:
     needs: test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/2nd_homework')
     runs-on: ubuntu-latest
 
     steps:
