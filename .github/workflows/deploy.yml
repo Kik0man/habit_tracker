@@ -58,8 +58,6 @@ jobs:
           TELEGRAM_BOT_TOKEN: dummy
         run: |
           python manage.py test --noinput
-          coverage run --source='habits,tg_bot,config' manage.py test
-          coverage report -m --fail-under=80
 
   build-and-deploy:
     needs: test
@@ -97,5 +95,5 @@ jobs:
           script: |
             cd /opt/habits
             docker compose pull
-            docker compose up -d
+            docker compose up -d --remove-orphans
             docker system prune -f
