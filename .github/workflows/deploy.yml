@@ -96,5 +96,5 @@ jobs:
           script: |
             cd /opt/habits
             docker compose pull
-            docker compose up -d --remove-orphans
-            docker system prune -f
+            docker compose up -d
+          debug: true
