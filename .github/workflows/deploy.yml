@@ -57,7 +57,8 @@ jobs:
           SECRET_KEY: testsecretkey
           TELEGRAM_BOT_TOKEN: dummy
         run: |
-          python manage.py test --noinput
+          python manage.py migrate
+          python manage.py test
 
   build-and-deploy:
     needs: test
