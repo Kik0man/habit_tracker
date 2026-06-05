@@ -4,55 +4,85 @@
 
 ## Технологии
 
-Проект написан на Python с использованием Django, Django REST Framework, PostgreSQL (или SQLite для разработки), Celery и Redis для отложенных задач, JWT для аутентификации, python-telegram-bot и requests для отправки уведомлений, а также drf-spectacular для автоматической документации API. Тестирование выполняется через pytest и coverage.
+- Python, Django, Django REST Framework
+- PostgreSQL (или SQLite для тестов)
+- Celery + Redis
+- JWT-аутентификация
+- Telegram Bot API
+- Docker, Docker Compose, Nginx
+- GitHub Actions (CI/CD)
 
-## Установка и запуск
+## Локальный запуск с Docker Compose (рекомендовано)
 
-Склонируйте репозиторий, создайте виртуальное окружение и установите зависимости. Если используете Poetry, выполните `poetry install`. Иначе создайте requirements.txt и установите через pip. Создайте файл `.env` по образцу `.env.template`, указав секретный ключ, настройки базы данных, токен Telegram-бота и адрес Redis. Примените миграции командой `python manage.py migrate`. Запустите сервер разработки через `python manage.py runserver`.
+1. **Клонируйте репозиторий**  
+   ```bash
+   git clone <your-repo-url>
+   cd habits-tracker
 
-Для работы отложенных напоминаний запустите Redis (например, `redis-server`), затем в отдельных терминалах выполните `celery -A config worker -l info` и `celery -A config beat -l info`. Для отправки сообщений через прокси (например, в РФ) запустите Tor командой `brew services start tor` и используйте SOCKS5 прокси в настройках бота.
+2. Создайте файл .env на основе .env.example и заполните его:
+`cp .env.example .env`
+Отредактируйте .env, указав реальные значения для SECRET_KEY, TELEGRAM_BOT_TOKEN и др.
+Примечание: для запуска в Docker значения DB_HOST и REDIS_URL должны указывать на имена сервисов (db, redis).
+3. Запустите все сервисы `docker-compose up -d`
+4. Примените миграции (обычно выполняются автоматически entrypoint'ом, но можно вручную):
+`docker-compose exec web python manage.py migrate`
+5. Проверьте работу
 
-## API и документация
+API доступно по адресу: http://localhost
+Документация Swagger: http://localhost/api/swagger/
+Админка: http://localhost/admin/
 
-Все эндпоинты задокументированы автоматически. После запуска сервера откройте `http://127.0.0.1:8000/api/swagger/` для интерактивной документации OpenAPI. Для авторизации используется JWT: получите токен через `POST /api/token/` и передавайте его в заголовке `Authorization: Bearer <token>`.
+6. Остановка и очистка
+`docker-compose down
+docker-compose down -v   # удалить тома (БД, Redis, статику)`
+
+## Локальный запуск без Docker (для разработки)
+
+- Создайте и активируйте виртуальное окружение.
+- Установите зависимости: pip install -r requirements.txt.
+- Установите и запустите PostgreSQL, Redis локально.
+- Создайте .env с настройками (для локального хоста: DB_HOST=localhost, REDIS_URL=redis://localhost:6379/0).
+- Выполните миграции: python manage.py migrate.
+- Запустите сервер: python manage.py runserver.
+- В отдельных терминалах запустите Celery:
+`celery -A config worker -l info`
+`celery -A config beat -l info`
+
 
 ## Тестирование
 
-Запустите тесты с покрытием: `coverage run --source='habits,tg_bot,config' manage.py test` и `coverage report -m`. Целевой уровень покрытия — 80% и выше.
+Запуск тестов с покрытием: `coverage run --source='habits,tg_bot,config' manage.py test`
+`coverage report -m`
 
-## Проверка отправки уведомлений
+### CI/CD и автоматический деплой
 
-Создайте привычку через админку или API, указав время на несколько минут вперёд, добавьте в профиле Telegram свой chat_id, запустите Celery worker и beat. В указанное время вы получите сообщение от бота с напоминанием.
-
-## Лицензия
-
-Учебный проект, не предназначен для коммерческого использования.
-
-## Запуск через Docker (рекомендованный способ)
-
-1. Убедитесь, что на машине установлены Docker и Docker Compose.
-2. Склонируйте репозиторий и перейдите в корневую папку проекта.
-3. Скопируйте `.env.example` в `.env`:
-   ```bash
-   cp .env.example .env
-   
-Заполните .env своими значениями (особенно SECRET_KEY и TELEGRAM_BOT_TOKEN).
-
-4. Запустите все сервисы:
-`docker-compose up -d`
-5. Примените миграции (автоматически выполняются при старте web‑сервиса, но можно и вручную):
-`docker-compose exec web python manage.py migrate`
-6. API станет доступно по адресу: http://localhost:8000
-
-   Документация Swagger: http://localhost:8000/api/swagger/
-
-### Остановка и удаление контейнеров
-`docker-compose down`
+Проект настроен на непрерывную интеграцию и доставку с помощью GitHub Actions.
 
 
-Чтобы удалить также тома с данными БД и Redis: `docker-compose down -v`
+### Настройка удалённого сервера
 
-### Просмотр логов
-`docker-compose logs -f`         # все сервисы
+- Установите на сервере Docker и Docker Compose (плагин).
+- Создайте пользователя (например, deploy) и добавьте его в группу docker. 
+- Склонируйте репозиторий в /opt/habits-tracker:
+`sudo mkdir -p /opt/habits-tracker`
+`sudo chown deploy:deploy /opt/habits-tracker`
+`git clone <your-repo-url> /opt/habits-tracker`
+- Скопируйте файл .env на сервер (с реальными значениями) в /opt/habits-tracker/.env.
+- Настройте SSH-доступ: сгенерируйте ключ для GitHub Actions и добавьте публичный ключ в ~/.ssh/authorized_keys пользователя deploy.
 
-`docker-compose logs -f celery`   # только celery worker
+
+
+## Итоговые изменения
+
+- Добавлен **Dockerfile** для сборки образа Django-приложения.
+- **docker-compose.yml** дополнен сервисом `nginx` для раздачи статики и проксирования запросов.
+- **entrypoint.sh** теперь выполняет сбор статики (`collectstatic`).
+- Создан шаблон **.env.example**.
+- Добавлен **GitHub Actions workflow** (`.github/workflows/ci_cd.yml`), который:
+  - запускает линтинг и тесты,
+  - проверяет сборку образов,
+  - автоматически деплоит на сервер при пуше в `main`.
+- В **requirements.txt** добавлен `gunicorn`.
+- Обновлён **README.md** с подробными инструкциями по локальному запуску, CI/CD и деплою.
+
+После добавления этих файлов в репозиторий проект можно запустить локально командой `docker-compose up -d`, а также настроить автоматический деплой через GitHub Actions.
