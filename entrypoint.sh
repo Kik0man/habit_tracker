@@ -12,5 +12,6 @@ until nc -z -v -w30 redis 6379; do
 done
 
 python manage.py migrate --noinput
+python manage.py collectstatic --noinput
 
 exec "$@"
